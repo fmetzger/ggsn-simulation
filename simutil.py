@@ -42,6 +42,13 @@ def loadHourlyDuration(filename):
 
     return inverseCdf
 
+def load_config(filename):
+    with open(filename) as cfg_file:
+        for line in cfg_file:
+            name, var = line.partition("=")[::2]
+            
+            myvars[name.strip()] = var # dont parse vars yet, might be lambdas and other stuff
+
 def getHourOfTheDay(t):
     secondOfDay = t % (60 * 60 * 24)
     return int(math.floor(secondOfDay / (60 * 60)))
