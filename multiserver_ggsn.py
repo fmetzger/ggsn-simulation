@@ -25,7 +25,7 @@ def main():
     inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
     tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)
 
-    ggsn = Multiserver_GGSN(env, tunnelDurationRV, config_dict["number_of_supported_parallel_tunnels"], config_dict["transient_phase_duration"], config_dict["startup_time"], config_dict["shutdown_time"], config_dict["startup_condition"], config_dict["shutdown_condition"], sim_name)
+    ggsn = Multiserver_GGSN(env, options, config_dict)
     users = Users(env, tunnelInterArrivalTimeRV, ggsn, sim_name)
 
     simpy.simulate(env, until = config_dict["duration"])

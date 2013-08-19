@@ -119,7 +119,6 @@ class Multiserver_GGSN(Base_GGSN):
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.resources.count, self.resources.capacity)
 
-            print self.numberOfRunningInstances, self.numberOfSupportedParallelTunnels, self.numberOfTotalTunnels, getHourOfTheDay(self.env.now), self.resources.count, self.shutdownCondition(self.numberOfRunningInstances, self.numberOfSupportedParallelTunnels, self.numberOfTotalTunnels, getHourOfTheDay(self.env.now))
             if not self.instanceShutdown and self.shutdownCondition(self.numberOfRunningInstances, self.numberOfSupportedParallelTunnels, self.resources.count, getHourOfTheDay(self.env.now)):
                 self.instanceShutdown = True
                 self.numberOfRunningInstances -= 1
