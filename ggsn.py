@@ -6,19 +6,22 @@ from simclasses import *
 
 
 class Base_GGSN():
-    def __init__(self, env, name, tunnelDurationRV, numberOfSupportedParallelTunnels, transientPhaseDuration ):
+    def __init__(self, env, options, config_dict):
         self.env = env
-        self.name = name
-        self.logger = get_logger(name)
-        self.tunnelDurationRV = tunnelDurationRV
-        self.numberOfSupportedParallelTunnels = numberOfSupportedParallelTunnels
-        self.transientPhaseDuration = transientPhaseDuration
+        self.name = options.ggsnType
+
+        self.logger = get_logger(options.ggsnType)
+        inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
+        self.tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)        
+
+        self.numberOfSupportedParallelTunnels = config_dict["number_of_supported_parallel_tunnels"]
+        self.transientPhaseDuration = config_dict["transient_phase_duration"]
 
         self.numberOfTotalTunnels = 0
         self.numberOfTunnelsBlocked = 0
 
         self.resources = simpy.Resource(self.env, capacity = self.numberOfSupportedParallelTunnels)
-        self.resources_monitor = monitoring.resource_monitor(self.resources, DurationBackend(self.numberOfSupportedParallelTunnels, transientPhaseDuration))
+        self.resources_monitor = monitoring.resource_monitor(self.resources, DurationBackend(self.numberOfSupportedParallelTunnels, self.transientPhaseDuration))
 
     def resourceUseDistribution(self):
         return [duration/self.env.now for duration in self.resources_monitor.data]
@@ -46,8 +49,8 @@ class Base_GGSN():
 
 
 class Traditional_GGSN(Base_GGSN):
-    def __init__(self, env,  tunnelDurationRV, numberOfSupportedParallelTunnels, transientPhaseDuration, name):
-        Base_GGSN.__init__(self, env, name, tunnelDurationRV, numberOfSupportedParallelTunnels, transientPhaseDuration )
+    def __init__(self, env, options, config_dict):
+        Base_GGSN.__init__(self, env, options, config_dict)
 
     def process(self):
         currentTime = self.env.now
@@ -68,16 +71,18 @@ class Traditional_GGSN(Base_GGSN):
 
 
 class Multiserver_GGSN(Base_GGSN):
-    def __init__(self, env,  tunnelDurationRV, numberOfSupportedParallelTunnels, transientPhaseDuration, startupTime, shutdownTime, startupCondition, shutdownCondition, name):
-        Base_GGSN.__init__(self, env, name, tunnelDurationRV, numberOfSupportedParallelTunnels, transientPhaseDuration )
+    def __init__(self, env, options, config_dict):
+        Base_GGSN.__init__(self, env, options, config_dict)
         
+        
+        self.instanceStartupTime = config_dict["startup_time"]
+        self.instanceShutdownTime = config_dict["shutdown_time"]
+        self.startupCondition = config_dict["startup_condition"]
+        self.shutdownCondition = config_dict["shutdown_condition"]
+
         self.numberOfRunningInstances = 1
-        self.instanceStartupTime = startupTime
         self.instanceStartup = False
-        self.instanceShutdownTime = shutdownTime
         self.instanceShutdown = False
-        self.startupCondition = startupCondition
-        self.shutdownCondition = shutdownCondition
 
     def process(self):
         currentTime = self.env.now

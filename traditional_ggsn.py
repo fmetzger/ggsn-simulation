@@ -21,10 +21,11 @@ def main():
 
     # inverseTunnelDurationCdf = lambda x: 3.8147e-6 / (x - 1) * (2.55328e8 - 4.20317e8 * x - math.sqrt(6.51925e16 - 2.06182e17 * x + 1.68178e17 * x**2) )
     # tunnelDurationRV = inversionMethod(inverseTunnelDurationCdf)
-    inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
-    tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)
 
-    ggsn = Traditional_GGSN(env, tunnelDurationRV, config_dict["number_of_supported_parallel_tunnels"], config_dict["transient_phase_duration"], sim_name)
+    # inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
+    # tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)
+
+    ggsn = Traditional_GGSN(env, options, config_dict)
     users = Users(env, tunnelInterArrivalTimeRV, ggsn, sim_name)
 
     simpy.simulate(env, until = config_dict["duration"])
