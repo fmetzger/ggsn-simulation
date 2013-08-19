@@ -28,7 +28,7 @@ def main():
     ggsn = Traditional_GGSN(env, options, config_dict)
     users = Users(env, tunnelInterArrivalTimeRV, ggsn, sim_name)
 
-    simpy.simulate(env, until = config_dict["duration"])
+    env.simulate(until = config_dict["duration"])
 
     print("Writing results")
     ggsn.report(options.seed, config_dict["duration"])
