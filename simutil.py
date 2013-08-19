@@ -9,6 +9,7 @@ if is_pypy:
 import numpy
 import logging
 import optparse
+import ConfigParser
 import math
 import random
 
@@ -43,11 +44,17 @@ def loadHourlyDuration(filename):
     return inverseCdf
 
 def load_config(filename):
-    with open(filename) as cfg_file:
-        for line in cfg_file:
-            name, var = line.partition("=")[::2]
-            
-            myvars[name.strip()] = var # dont parse vars yet, might be lambdas and other stuff
+    config = ConfigParser.ConfigParser()
+    config.read(filename)
+    kv = dict()
+    cfg_list = config.items("generic")
+    for cfg_pair in cfg_list:
+        try:
+            kv[cfg_pair[0]] = eval(cfg_pair[1])
+        except SyntaxError:
+            print("invalid eval at key [{1}, {2}], using as string".format(cfg_pair))
+            kv[cfg_pair[0]] = cfg_pair[1]
+    return kv
 
 def getHourOfTheDay(t):
     secondOfDay = t % (60 * 60 * 24)
@@ -79,24 +86,33 @@ def get_logger(loggername):
 def option_parse():
     parser = optparse.OptionParser()
     parser.add_option("-s", "--seed", type="int", default = 13)
-    parser.add_option("-n", "--numberOfSupportedParallelTunnels", type="int", default = 2)
-    parser.add_option("-d", "--duration", type="int", default = 48)
     parser.add_option("-c", "--logToConsole", action="store_true")
     parser.add_option("-f", "--logToFile", action="store_true", default=True)
-    parser.add_option("-t", "--transientPhaseDuration", type="int", default = 3600)
-    parser.add_option("-u", "--startupTime", type="int", default = 20)
-    parser.add_option("-z", "--shutdownTime", type="int", default = 20)
-    parser.add_option("-l", "--shutdownCondition", type="string", help="Condition under which to shut down an instance, expression as three variable lambda: tunnels, instances, instancecapacity")
+    parser.add_option("-l", "--logLevel", type="string", default="WARN")
+
+    # parser.add_option("-l", "--shutdownCondition", type="string", help="Condition under which to shut down an instance, expression as three variable lambda: tunnels, instances, instancecapacity")
+    # parser.add_option("-t", "--transientPhaseDuration", type="int", default = 3600)
+    # parser.add_option("-u", "--startupTime", type="int", default = 20)
+    # parser.add_option("-z", "--shutdownTime", type="int", default = 20)
+    # parser.add_option("-d", "--duration", type="int", default = 10)
+    # parser.add_option("-n", "--numberOfSupportedParallelTunnels", type="int", default = 2)
 
     return parser.parse_args()
 
 
-def setup_logger(options, name, env):
+def setup_logger(options, config_dict, name, env):
     simulationFormatter = SimulationFormatter(env)
     logger = logging.getLogger(name)
-    logger.setLevel(logging.WARN)
+    if options.logLevel == "INFO":
+        logger.setLevel(logging.INFO)
+    elif options.logLevel == "WARN":
+        logger.setLevel(logging.WARN)
+    else:
+        logger.setLevel(logging.WARN)
+
+
     if options.logToFile:
-        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (name, options.numberOfSupportedParallelTunnels, options.duration, options.seed))
+        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (name, config_dict["number_of_supported_parallel_tunnels"], config_dict["duration"], options.seed))
         fileHandler.setFormatter(simulationFormatter)
         logger.addHandler(fileHandler)
     if options.logToConsole:

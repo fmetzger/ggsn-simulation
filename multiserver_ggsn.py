@@ -10,16 +10,12 @@ from ggsn import Multiserver_GGSN
 
 def main():
     (options, args) = option_parse()
+    config_dict = load_config('assets/sim.config')
+    for k,v in config_dict.items():
+        print ("{0} = {1}".format(k,v))
+
     env = simpy.Environment()
-    setup_logger(options, sim_name, env)
-
-    print("Simulating for %d seconds (transient phase of %d seconds) with a support for %d parallel tunnels and seed %d." % (options.duration, options.transientPhaseDuration, options.numberOfSupportedParallelTunnels, options.seed))
-
-
-    if options.shutdownCondition:
-        shutdownCondition = eval(options.shutdownCondition)
-    else:
-        shutdownCondition = lambda tunnels, instances, instancecapacity: (instances*instancecapacity - tunnels) >= instancecapacity * 2
+    setup_logger(options, config_dict, sim_name, env)
 
 
     random.seed(options.seed)
@@ -29,13 +25,13 @@ def main():
     inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
     tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)
 
-    ggsn = Multiserver_GGSN(env, tunnelDurationRV, options.numberOfSupportedParallelTunnels, options.transientPhaseDuration, options.startupTime, options.shutdownTime, shutdownCondition, sim_name)
+    ggsn = Multiserver_GGSN(env, tunnelDurationRV, config_dict["number_of_supported_parallel_tunnels"], config_dict["transient_phase_duration"], config_dict["startup_time"], config_dict["shutdown_time"], config_dict["startup_condition"], config_dict["shutdown_condition"], sim_name)
     users = Users(env, tunnelInterArrivalTimeRV, ggsn, sim_name)
 
-    simpy.simulate(env, until = options.duration)
+    simpy.simulate(env, until = config_dict["duration"])
 
     print("Writing results")
-    ggsn.report(options.seed, options.duration)
+    ggsn.report(options.seed, config_dict["duration"])
 
 
 if __name__ == '__main__':
