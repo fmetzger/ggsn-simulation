@@ -89,6 +89,7 @@ def option_parse():
     parser.add_option("-c", "--logToConsole", action="store_true")
     parser.add_option("-f", "--logToFile", action="store_true", default=True)
     parser.add_option("-l", "--logLevel", type="string", default="WARN")
+    parser.add_option("-t", "--ggsnType", type="string")
 
     # parser.add_option("-l", "--shutdownCondition", type="string", help="Condition under which to shut down an instance, expression as three variable lambda: tunnels, instances, instancecapacity")
     # parser.add_option("-t", "--transientPhaseDuration", type="int", default = 3600)

@@ -57,7 +57,7 @@ class Traditional_GGSN(Base_GGSN):
         if self.resources.count != self.numberOfSupportedParallelTunnels:
             with self.resources.request() as request:
                 yield request
-                tunnelDuration = self.tunnelDurationRV()
+                tunnelDuration = self.tunnelDurationRV(self.env.now)
                 self.logger.info("Tunnel established, duration of %f", tunnelDuration)
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.resources.count, self.numberOfSupportedParallelTunnels)
@@ -108,8 +108,7 @@ class Multiserver_GGSN(Base_GGSN):
 
                 ## fetch the inverse cdf for the duration distribution for the current hour of day
                 # tunnelDuration = self.tunnelDurationRV()
-                currentTime = self.env.now
-                tunnelDuration = self.tunnelDurationRV(currentTime)
+                tunnelDuration = self.tunnelDurationRV(self.env.now)
 
                 self.logger.info("Tunnel established, duration of %f", tunnelDuration)
                 yield self.env.timeout(tunnelDuration)
