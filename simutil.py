@@ -13,12 +13,6 @@ import ConfigParser
 import math
 import random
 
-#from simclasses import *
-
-#def each_cons(x, n):
-#    return [x[i:i+n] for i in range(len(x) - n + 1)]
-
-
 
 def inversionMethod(inverseCdf):
     return lambda: inverseCdf(random.random())
@@ -79,9 +73,6 @@ def mkdirs(path):
             pass
         else: raise
 
-def get_logger(loggername):
-    return logging.getLogger(loggername)
-
 
 def option_parse():
     parser = optparse.OptionParser()
@@ -101,9 +92,9 @@ def option_parse():
     return parser.parse_args()
 
 
-def setup_logger(options, config_dict, name, env):
+def setup_logger(options, config_dict, env):
     simulationFormatter = SimulationFormatter(env)
-    logger = logging.getLogger(name)
+    logger = logging.getLogger(options.ggsnType)
     if options.logLevel == "INFO":
         logger.setLevel(logging.INFO)
     elif options.logLevel == "WARN":
@@ -113,7 +104,7 @@ def setup_logger(options, config_dict, name, env):
 
 
     if options.logToFile:
-        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (name, config_dict["number_of_supported_parallel_tunnels"], config_dict["duration"], options.seed))
+        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (options.ggsnType, config_dict["number_of_supported_parallel_tunnels"], config_dict["duration"], options.seed))
         fileHandler.setFormatter(simulationFormatter)
         logger.addHandler(fileHandler)
     if options.logToConsole:

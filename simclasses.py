@@ -22,10 +22,11 @@ class DurationBackend:
 
 
 class Users():
-    def __init__(self, env, tunnelInterArrivalTimeRV, ggsn, name):
+    def __init__(self, env, ggsn, options):
         self.env = env
-        self.name = name
-        self.tunnelInterArrivalTimeRV = tunnelInterArrivalTimeRV
+        self.logger = logging.getLogger(options.ggsnType)
+        interarrivalRates = loadHourlyRates('assets/interarrival_rates.csv')
+        self.tunnelInterArrivalTimeRV = lambda t: random.expovariate(tunnelInterArrivalRate(interarrivalRates, t))
         self.ggsn = ggsn
 
         self.lastNotification = 0
@@ -39,5 +40,5 @@ class Users():
                 self.lastNotification = currentTime
             nextArrival = self.tunnelInterArrivalTimeRV(currentTime)
             yield self.env.timeout(nextArrival)
-            get_logger(self.name).info("New tunnel request by user")
+            self.logger.info("New tunnel request by user")
             self.env.start(self.ggsn.process())

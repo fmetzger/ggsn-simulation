@@ -10,7 +10,7 @@ class Base_GGSN():
         self.env = env
         self.name = options.ggsnType
 
-        self.logger = get_logger(options.ggsnType)
+        self.logger = logging.getLogger(options.ggsnType)
         inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
         self.tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)        
 
