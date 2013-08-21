@@ -3,19 +3,17 @@ import monitoring
 
 from simutil import *
 from simclasses import *
-
-
 class Base_GGSN():
-    def __init__(self, env, options, config_dict):
+    def __init__(self, env, options):
         self.env = env
-        self.name = options.ggsnType
+        self.name = options.type
 
-        self.logger = logging.getLogger(options.ggsnType)
+        self.logger = logging.getLogger(options.type)
         inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
         self.tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)        
 
-        self.numberOfSupportedParallelTunnels = config_dict["number_of_supported_parallel_tunnels"]
-        self.transientPhaseDuration = config_dict["transient_phase_duration"]
+        self.numberOfSupportedParallelTunnels = options.numberOfSupportedParallelTunnels
+        self.transientPhaseDuration = options.transientPhaseDuration
 
         self.numberOfTotalTunnels = 0
         self.numberOfTunnelsBlocked = 0
@@ -49,8 +47,8 @@ class Base_GGSN():
 
 
 class Traditional_GGSN(Base_GGSN):
-    def __init__(self, env, options, config_dict):
-        Base_GGSN.__init__(self, env, options, config_dict)
+    def __init__(self, env, options):
+        Base_GGSN.__init__(self, env, options)
 
     def process(self):
         currentTime = self.env.now
@@ -71,18 +69,24 @@ class Traditional_GGSN(Base_GGSN):
 
 
 class Multiserver_GGSN(Base_GGSN):
-    def __init__(self, env, options, config_dict):
-        Base_GGSN.__init__(self, env, options, config_dict)
+    def __init__(self, env, options):
+        Base_GGSN.__init__(self, env, options)
         
-        
-        self.instanceStartupTime = config_dict["startup_time"]
-        self.instanceShutdownTime = config_dict["shutdown_time"]
-        self.startupCondition = config_dict["startup_condition"]
-        self.shutdownCondition = config_dict["shutdown_condition"]
+        self.instanceStartupTime = options.startupTime
+        self._startupCondition = options.startupCondition(self, options)
+        self.instanceShutdownTime = options.shutdownTime
+        self._shutdownCondition = options.shutdownCondition(self, options)
 
-        self.numberOfRunningInstances = 1
+        self._numberOfRunningInstances = 1
         self.instanceStartup = False
         self.instanceShutdown = False
+
+
+    def numberOfRunningInstances(self):
+        return self._numberOfRunningInstances
+
+    def currentNumberOfTunnels(self):
+        return self.resources.count
 
     def process(self):
         currentTime = self.env.now
@@ -95,12 +99,12 @@ class Multiserver_GGSN(Base_GGSN):
             self.logger.info("Tunnel request denied.")
 
         else:
-            if not self.instanceStartup and self.startupCondition(self.numberOfRunningInstances, self.numberOfSupportedParallelTunnels, self.resources.count, getHourOfTheDay(self.env.now)):
+            if not self.instanceStartup and self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
                 self.instanceStartup = True 
                 yield self.env.timeout(self.instanceStartupTime)
-                self.numberOfRunningInstances += 1
-                self.resources._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances
-                self.logger.warn("Spawning new GGSN instance, now at %d", self.numberOfRunningInstances)
+                self._numberOfRunningInstances += 1
+                self.resources._capacity = self.numberOfSupportedParallelTunnels * self._numberOfRunningInstances
+                self.logger.warn("Spawning new GGSN instance, now at %d", self._numberOfRunningInstances)
                 self.instanceStartup = False                
             elif self.instanceStartup:
                 self.logger.info("Already spawning new GGSN, not spawning another instance.")
@@ -119,11 +123,11 @@ class Multiserver_GGSN(Base_GGSN):
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.resources.count, self.resources.capacity)
 
-            if not self.instanceShutdown and self.shutdownCondition(self.numberOfRunningInstances, self.numberOfSupportedParallelTunnels, self.resources.count, getHourOfTheDay(self.env.now)):
+            if not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
                 self.instanceShutdown = True
-                self.numberOfRunningInstances -= 1
-                self.resources._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances
-                self.logger.warn("Shutting down GGSN instance, now at %d", self.numberOfRunningInstances)
+                self._numberOfRunningInstances -= 1
+                self.resources._capacity = self.numberOfSupportedParallelTunnels * self._numberOfRunningInstances
+                self.logger.warn("Shutting down GGSN instance, now at %d", self._numberOfRunningInstances)
                 yield self.env.timeout(self.instanceShutdownTime)
                 self.instanceShutdown = False
 

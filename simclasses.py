@@ -24,7 +24,7 @@ class DurationBackend:
 class Users():
     def __init__(self, env, ggsn, options):
         self.env = env
-        self.logger = logging.getLogger(options.ggsnType)
+        self.logger = logging.getLogger(options.type)
         interarrivalRates = loadHourlyRates('assets/interarrival_rates.csv')
         self.tunnelInterArrivalTimeRV = lambda t: random.expovariate(tunnelInterArrivalRate(interarrivalRates, t))
         self.ggsn = ggsn

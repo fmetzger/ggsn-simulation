@@ -8,7 +8,7 @@ if is_pypy:
     import numpypy
 import numpy
 import logging
-import optparse
+import argparse
 import ConfigParser
 import math
 import random
@@ -43,11 +43,11 @@ def load_config(filename):
     kv = dict()
     cfg_list = config.items("generic")
     for cfg_pair in cfg_list:
-        try:
-            kv[cfg_pair[0]] = eval(cfg_pair[1])
-        except SyntaxError:
-            print("invalid eval at key [{1}, {2}], using as string".format(cfg_pair))
-            kv[cfg_pair[0]] = cfg_pair[1]
+        #try:
+        #    kv[cfg_pair[0]] = eval(cfg_pair[1])
+        #except SyntaxError:
+        #    print("invalid eval at key [{1}, {2}], using as string".format(cfg_pair))
+        kv[cfg_pair[0]] = cfg_pair[1]
     return kv
 
 def getHourOfTheDay(t):
@@ -74,27 +74,44 @@ def mkdirs(path):
         else: raise
 
 
-def option_parse():
-    parser = optparse.OptionParser()
-    parser.add_option("-s", "--seed", type="int", default = 13)
-    parser.add_option("-c", "--logToConsole", action="store_true")
-    parser.add_option("-f", "--logToFile", action="store_true", default=True)
-    parser.add_option("-l", "--logLevel", type="string", default="WARN")
-    parser.add_option("-t", "--ggsnType", type="string")
+def class_type(string):
+    module_name, point, class_name = string.rpartition(".")
+    module = __import__(module_name)
+    return getattr(module, class_name)
+
+
+def option_parse(config_dict):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--seed", type=int, default = config_dict["seed"])
+
+    parser.add_argument("-c", "--logToConsole", action="store_true")
+    parser.add_argument("-f", "--logToFile", action="store_true", default=True)
+    parser.add_argument("-l", "--logLevel", default="WARN")
+
+    parser.add_argument("-t", "--transientPhaseDuration", type=int, default = config_dict["transient_phase_duration"])
+    parser.add_argument("-d", "--duration", type=int, default = config_dict["duration"])
+
+    parser.add_argument("-n", "--numberOfSupportedParallelTunnels", type=int, default = config_dict["number_of_supported_parallel_tunnels"])
+
+    subparsers = parser.add_subparsers(title = "type", description = "available ggsn types", dest="type")
+    traditional_parser = subparsers.add_parser("traditional")
+
+    multiserver_parser = subparsers.add_parser("multiserver")
+    multiserver_parser.add_argument("-u", "--startupTime", type=int, default = 20)
+    multiserver_parser.add_argument("-z", "--shutdownTime", type=int, default = 20)
+    multiserver_parser.add_argument("-U", "--startupCondition", type=class_type, default = config_dict["startup_condition"])
+    multiserver_parser.add_argument("-Z", "--shutdownCondition", type=class_type, default = config_dict["shutdown_condition"])
 
     # parser.add_option("-l", "--shutdownCondition", type="string", help="Condition under which to shut down an instance, expression as three variable lambda: tunnels, instances, instancecapacity")
-    # parser.add_option("-t", "--transientPhaseDuration", type="int", default = 3600)
-    # parser.add_option("-u", "--startupTime", type="int", default = 20)
-    # parser.add_option("-z", "--shutdownTime", type="int", default = 20)
-    # parser.add_option("-d", "--duration", type="int", default = 10)
-    # parser.add_option("-n", "--numberOfSupportedParallelTunnels", type="int", default = 2)
-
-    return parser.parse_args()
+    result = parser.parse_args()
 
 
-def setup_logger(options, config_dict, env):
+    return result
+
+
+def setup_logger(options, env):
     simulationFormatter = SimulationFormatter(env)
-    logger = logging.getLogger(options.ggsnType)
+    logger = logging.getLogger(options.type)
     if options.logLevel == "INFO":
         logger.setLevel(logging.INFO)
     elif options.logLevel == "WARN":
@@ -104,7 +121,7 @@ def setup_logger(options, config_dict, env):
 
 
     if options.logToFile:
-        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (options.ggsnType, config_dict["number_of_supported_parallel_tunnels"], config_dict["duration"], options.seed))
+        fileHandler = logging.FileHandler("%s_%d_%d_%d.log" % (options.type, options.numberOfSupportedParallelTunnels, options.duration, options.seed))
         fileHandler.setFormatter(simulationFormatter)
         logger.addHandler(fileHandler)
     if options.logToConsole:
