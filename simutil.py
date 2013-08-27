@@ -88,6 +88,8 @@ def option_parse(config_dict):
     parser.add_argument("-f", "--logToFile", action="store_true", default=True)
     parser.add_argument("-l", "--logLevel", default="WARN")
 
+    parser.add_argument("-r", "--results", default=config_dict["results"])
+
     parser.add_argument("-t", "--transientPhaseDuration", type=int, default = config_dict["transient_phase_duration"])
     parser.add_argument("-d", "--duration", type=int, default = config_dict["duration"])
 

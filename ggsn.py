@@ -8,6 +8,7 @@ class Base_GGSN():
         self.env = env
         self.name = options.type
 
+        self.resultsdir = options.results
         self.logger = logging.getLogger(options.type)
         inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
         self.tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)        
@@ -34,12 +35,12 @@ class Base_GGSN():
         return sum([i * distribution[i] for i in range(len(distribution))])
 
     def report(self, seed, simulationDuration):
-        mkdirs("results/%s" % (self.name))
-        with open("results/%s/resource_use_distribution_%d_%d.csv" % (self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
+        mkdirs("%s/%s" % (self.resultsdir, self.name))
+        with open("%s/%s/resource_use_distribution_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
             resourceUseDistribution = self.resourceUseDistribution()
             writer = csv.writer(csvFile, delimiter = ";")
             writer.writerow([seed] + resourceUseDistribution)
-        with open("results/%s/metrics_%d_%d.csv" % (self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
+        with open("%s/%s/metrics_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
             meanResourceUtilization = self.meanResourceUtilization(resourceUseDistribution)
             blockingProbability = self.blockingProbability()
             writer = csv.writer(csvFile, delimiter = ";")
