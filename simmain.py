@@ -28,7 +28,7 @@ def main():
 
     
     users = Users(env, ggsn, options)
-    env.simulate(until = options.duration)
+    env.run(until = options.duration)
     print("Writing results")
     ggsn.report(options.seed, options.duration)
 
