@@ -19,11 +19,11 @@ class Base_GGSN():
         self.numberOfTotalTunnels = 0
         self.numberOfTunnelsBlocked = 0
 
-        self.resources = simpy.Resource(self.env, capacity = self.numberOfSupportedParallelTunnels)
-        self.resources_monitor = monitoring.resource_monitor(self.resources, DurationBackend(self.numberOfSupportedParallelTunnels, self.transientPhaseDuration))
+        self.tunnels = simpy.Resource(self.env, capacity = self.numberOfSupportedParallelTunnels)
+        self.tunnels_monitor = monitoring.resource_monitor(self.tunnels, DurationBackend(self.numberOfSupportedParallelTunnels, self.transientPhaseDuration))
 
-    def resourceUseDistribution(self):
-        return [duration/self.env.now for duration in self.resources_monitor.data]
+    def resourceUseDistribution(self,monitor):
+        return [duration/self.env.now for duration in monitor.data]
 
     def blockingProbability(self):
         if (self.numberOfTotalTunnels != 0):
@@ -37,7 +37,7 @@ class Base_GGSN():
     def report(self, seed, simulationDuration):
         mkdirs("%s/%s" % (self.resultsdir, self.name))
         with open("%s/%s/resource_use_distribution_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
-            resourceUseDistribution = self.resourceUseDistribution()
+            resourceUseDistribution = self.resourceUseDistribution(self.tunnels_monitor)
             writer = csv.writer(csvFile, delimiter = ";")
             writer.writerow([seed] + resourceUseDistribution)
         with open("%s/%s/metrics_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
@@ -53,16 +53,16 @@ class Traditional_GGSN(Base_GGSN):
 
     def process(self):
         currentTime = self.env.now
-        self.logger.info("New tunnel request at GGSN, currently %d/%d resources in use.", self.resources.count, self.numberOfSupportedParallelTunnels)
+        self.logger.info("New tunnel request at GGSN, currently %d/%d resources in use.", self.tunnels.count, self.numberOfSupportedParallelTunnels)
         if currentTime >= self.transientPhaseDuration:
             self.numberOfTotalTunnels += 1
-        if self.resources.count != self.numberOfSupportedParallelTunnels:
-            with self.resources.request() as request:
+        if self.tunnels.count != self.numberOfSupportedParallelTunnels:
+            with self.tunnels.request() as request:
                 yield request
                 tunnelDuration = self.tunnelDurationRV(self.env.now)
                 self.logger.info("Tunnel established, duration of %f", tunnelDuration)
                 yield self.env.timeout(tunnelDuration)
-            self.logger.info("Tunnel completed, now %d/%d resources in use.", self.resources.count, self.numberOfSupportedParallelTunnels)
+            self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.numberOfSupportedParallelTunnels)
         else:
             if currentTime >= self.transientPhaseDuration:
                 self.numberOfTunnelsBlocked += 1
@@ -78,24 +78,29 @@ class Multiserver_GGSN(Base_GGSN):
         self.instanceShutdownTime = options.shutdownTime
         self._shutdownCondition = options.shutdownCondition(self, options)
 
-        self._numberOfRunningInstances = 1
         self.instanceStartup = False
         self.instanceShutdown = False
 
+        self.numberOfMaxInstances = 1000
+        # self.instanceStack = []
+        self.instances = simpy.Resource(self.env, capacity = self.numberOfMaxInstances)
+        self.instances_monitor = monitoring.resource_monitor(self.instances, DurationBackend(self.numberOfMaxInstances, self.transientPhaseDuration))
+
+
 
     def numberOfRunningInstances(self):
-        return self._numberOfRunningInstances
+        return self.instances.count
 
     def currentNumberOfTunnels(self):
-        return self.resources.count
+        return self.tunnels.count
 
     def process(self):
         currentTime = self.env.now
-        self.logger.info("New tunnel request at GGSN, currently %d/%d resources in use.", self.resources.count, self.resources.capacity)
+        self.logger.info("New tunnel request at GGSN, currently %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
         if currentTime >= self.transientPhaseDuration:
             self.numberOfTotalTunnels += 1
 
-        if self.resources.count >= self.resources.capacity:
+        if self.tunnels.count >= self.tunnels.capacity:
             self.numberOfTunnelsBlocked += 1
             self.logger.info("Tunnel request denied.")
 
@@ -103,9 +108,10 @@ class Multiserver_GGSN(Base_GGSN):
             if not self.instanceStartup and self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
                 self.instanceStartup = True 
                 yield self.env.timeout(self.instanceStartupTime)
-                self._numberOfRunningInstances += 1
-                self.resources._capacity = self.numberOfSupportedParallelTunnels * self._numberOfRunningInstances
-                self.logger.warn("Spawning new GGSN instance, now at %d", self._numberOfRunningInstances)
+                req = self.instances.request()
+                # self.instanceStack.append(req)
+                self.tunnels._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances()
+                self.logger.warn("Spawning new GGSN instance, now at %d", self.numberOfRunningInstances())
                 self.instanceStartup = False                
             elif self.instanceStartup:
                 self.logger.info("Already spawning new GGSN, not spawning another instance.")
@@ -113,31 +119,33 @@ class Multiserver_GGSN(Base_GGSN):
                 self.logger.info("startup_condition not fulfilled, not spawning another instance.")
 
 
-            with self.resources.request() as request:
+            with self.tunnels.request() as request:
                 yield request
 
                 ## fetch the inverse cdf for the duration distribution for the current hour of day
-                # tunnelDuration = self.tunnelDurationRV()
                 tunnelDuration = self.tunnelDurationRV(self.env.now)
 
                 self.logger.info("Tunnel established, duration of %f", tunnelDuration)
                 yield self.env.timeout(tunnelDuration)
-            self.logger.info("Tunnel completed, now %d/%d resources in use.", self.resources.count, self.resources.capacity)
+            self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
 
-            if not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
+            # if len(self.instanceStack) >= 1 and not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
+            if self.instances.count >= 1 and not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
+
                 self.instanceShutdown = True
-                self._numberOfRunningInstances -= 1
-                self.resources._capacity = self.numberOfSupportedParallelTunnels * self._numberOfRunningInstances
-                self.logger.warn("Shutting down GGSN instance, now at %d", self._numberOfRunningInstances)
+                # self.instances.release(self.instanceStack.pop())
+                self.instances.release(self.instances.users[-1])
+                self.tunnels._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances()
+                self.logger.warn("Shutting down GGSN instance, now at %d", self.numberOfRunningInstances())
                 yield self.env.timeout(self.instanceShutdownTime)
                 self.instanceShutdown = False
 
-
-
-
-
-
-
+    def report(self, seed, simulationDuration):
+        Base_GGSN.report(self, seed, simulationDuration)
+        with open("%s/%s/instance_use_distribution_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
+            resourceUseDistribution = self.resourceUseDistribution(self.instances_monitor)
+            writer = csv.writer(csvFile, delimiter = ";")
+            writer.writerow([seed] + resourceUseDistribution)
 
 
 

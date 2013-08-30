@@ -3,22 +3,25 @@ import logging
 from simutil import *
 
 class DurationBackend:
-    def __init__(self, numberOfSupportedParallelTunnels, transientPhaseDuration):
-        self.data = numpy.zeros(numberOfSupportedParallelTunnels + 1)
+    def __init__(self, numberOfMaxResources, transientPhaseDuration):
+        self.data = numpy.zeros(numberOfMaxResources + 1)
         self.currentTime = 0
         self.transientPhaseDuration = transientPhaseDuration
 
     def append(self, data):
-        currentTime, numberOfProcesses, queueLength = data
+        currentTime, numberOfResourcesInUse, queueLength = data
         if currentTime >= self.transientPhaseDuration:
             duration = currentTime - self.currentTime
             self.currentTime = currentTime
             try:
-                self.data[numberOfProcesses] += duration
+                self.data[numberOfResourcesInUse] += duration
             except IndexError:
-                tmp = numpy.zeros(numberOfProcesses + 1 - len(self.data))
+                tmp = numpy.zeros(numberOfResourcesInUse + 1 - len(self.data))
                 self.data = numpy.concatenate((self.data, tmp))
-                self.data[numberOfProcesses] += duration
+                self.data[numberOfResourcesInUse] += duration
+
+
+
 
 
 class Users():
