@@ -70,6 +70,10 @@ class Traditional_GGSN(Base_GGSN):
 
 
 class Multiserver_GGSN(Base_GGSN):
+
+    instanceStartup = False
+    instanceShutdown = False
+
     def __init__(self, env, options):
         Base_GGSN.__init__(self, env, options)
         
@@ -78,11 +82,9 @@ class Multiserver_GGSN(Base_GGSN):
         self.instanceShutdownTime = options.shutdownTime
         self._shutdownCondition = options.shutdownCondition(self, options)
 
-        self.instanceStartup = False
-        self.instanceShutdown = False
+
 
         self.numberOfMaxInstances = 1000
-        # self.instanceStack = []
         self.instances = simpy.Resource(self.env, capacity = self.numberOfMaxInstances)
         self.instances_monitor = monitoring.resource_monitor(self.instances, DurationBackend(self.numberOfMaxInstances, self.transientPhaseDuration))
 
@@ -100,23 +102,24 @@ class Multiserver_GGSN(Base_GGSN):
         if currentTime >= self.transientPhaseDuration:
             self.numberOfTotalTunnels += 1
 
-        if self.tunnels.count >= self.tunnels.capacity:
+        if self.tunnels.count >= self.tunnels.capacity: ## capacity becomes 0 shortly after sim start, big issue as this will block any future tunnels
             self.numberOfTunnelsBlocked += 1
             self.logger.info("Tunnel request denied.")
 
         else:
-            if not self.instanceStartup and self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
-                self.instanceStartup = True 
+            if not Multiserver_GGSN.instanceStartup and self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
+                Multiserver_GGSN.instanceStartup = True 
                 yield self.env.timeout(self.instanceStartupTime)
                 req = self.instances.request()
-                # self.instanceStack.append(req)
+                #yield req
+                self.logger.warn(self.numberOfRunningInstances())
                 self.tunnels._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances()
-                self.logger.warn("Spawning new GGSN instance, now at %d", self.numberOfRunningInstances())
-                self.instanceStartup = False                
-            elif self.instanceStartup:
-                self.logger.info("Already spawning new GGSN, not spawning another instance.")
+                self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.numberOfRunningInstances(), self.tunnels._capacity)
+                Multiserver_GGSN.instanceStartup = False                
+            elif Multiserver_GGSN.instanceStartup:
+                self.logger.warn("Already spawning new GGSN, not spawning another instance.")
             else:
-                self.logger.info("startup_condition not fulfilled, not spawning another instance.")
+                self.logger.warn("startup_condition not fulfilled, not spawning another instance.")
 
 
             with self.tunnels.request() as request:
@@ -129,16 +132,14 @@ class Multiserver_GGSN(Base_GGSN):
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
 
-            # if len(self.instanceStack) >= 1 and not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
-            if self.instances.count >= 1 and not self.instanceShutdown and self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)):
-
-                self.instanceShutdown = True
-                # self.instances.release(self.instanceStack.pop())
+            if (self.numberOfRunningInstances() > 1) and (not Multiserver_GGSN.instanceShutdown) and (self._shutdownCondition.isMet(getHourOfTheDay(self.env.now))):
+                self.logger.warn("run_inst: %d, tuns: %d, max_t_per_inst: %d, cond: %d", self.numberOfRunningInstances(), self.currentNumberOfTunnels(), self.numberOfSupportedParallelTunnels, self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)))
+                Multiserver_GGSN.instanceShutdown = True
                 self.instances.release(self.instances.users[-1])
                 self.tunnels._capacity = self.numberOfSupportedParallelTunnels * self.numberOfRunningInstances()
                 self.logger.warn("Shutting down GGSN instance, now at %d", self.numberOfRunningInstances())
                 yield self.env.timeout(self.instanceShutdownTime)
-                self.instanceShutdown = False
+                Multiserver_GGSN.instanceShutdown = False
 
     def report(self, seed, simulationDuration):
         Base_GGSN.report(self, seed, simulationDuration)
