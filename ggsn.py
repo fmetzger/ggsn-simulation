@@ -107,7 +107,7 @@ class Multiserver_GGSN(Base_GGSN):
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
 
             #
-            self.hv.check_and_reduce_capacity()
+            yield self.env.start(self.hv.check_and_reduce_capacity())
 
     def report(self, seed, simulationDuration):
         Base_GGSN.report(self, seed, simulationDuration)

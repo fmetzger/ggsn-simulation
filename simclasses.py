@@ -72,37 +72,27 @@ class Hypervisor():
         return self.instances.count
 
     def check_and_increase_capacity(self):
-        print("check_and_increase_capacity")
         if not Hypervisor.instanceStartup:
-            self.logger.warn("no instance startup in progress")
             if self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
                 Hypervisor.instanceStartup = True 
-                # yield self.env.timeout(self.instanceStartupTime)
-                with self.instances.request() as req:
-                    yield req
-                    self.logger.warn(self.number_of_running_instances())
-                    self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
-                    self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
-                    Hypervisor.instanceStartup = False
+                yield self.env.timeout(self.instanceStartupTime)
+                req = self.instances.request()
+                # yield req
+                self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
+                self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
+                Hypervisor.instanceStartup = False
             else:
-                self.logger.warn("startup_condition not fulfilled, not spawning another instance.")         
+                self.logger.warn("startup_condition: %d, run_inst: %d, tuns: %d, max_t_per_inst: %d", self._startupCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)         
         else:
             self.logger.warn("Already spawning new GGSN, not spawning another instance.")
 
     def check_and_reduce_capacity(self):
-        self.logger.info("check_and_reduce_capacity")
         if (self.number_of_running_instances() > 1):
-            self.logger.warn("level 1: %d", self.number_of_running_instances())
             if (not Hypervisor.instanceShutdown):
-                self.logger.warn("level 2: %s", not Hypervisor.instanceShutdown)
                 if (self._shutdownCondition.isMet(getHourOfTheDay(self.env.now))):
-                    self.logger.warn("level 3: %s", self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)))
-
-                    self.logger.warn("run_inst: %d, tuns: %d, max_t_per_inst: %d, cond: %d", self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels, self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)))
+                    self.logger.warn("shutdown_cond: %d run_inst: %d, tuns: %d, max_t_per_inst: %d, ", self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
                     Hypervisor.instanceShutdown = True
                     self.instances.release(self.instances.users[-1])
                     self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
-                    self.logger.warn("Shutting down GGSN instance, now at %d", self.number_of_running_instances())
-                    print(self.instanceShutdownTime)
-                    # yield self.env.timeout(self.instanceShutdownTime)
+                    yield self.env.timeout(self.instanceShutdownTime)
                     Hypervisor.instanceShutdown = False

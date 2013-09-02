@@ -14,7 +14,7 @@ class DefaultShutdownCondition:
         self._instance_capacity = config.numberOfSupportedParallelTunnels
 
     def isMet(self, hourOfTheDay):
-         total_capacity = self.hv._number_of_running_instances() * self._instance_capacity
+         total_capacity = self._hv.number_of_running_instances() * self._instance_capacity
          return (total_capacity - self._ggsn.currentNumberOfTunnels()) >= self._instance_capacity * 2
 
 
