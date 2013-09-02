@@ -1,20 +1,20 @@
 class DefaultStartupCondition:
-    def __init__(self, ggsn, config):
+    def __init__(self, ggsn, hv, config):
         self._ggsn = ggsn
+        self._hv = hv
         self._instance_capacity = config.numberOfSupportedParallelTunnels
 
     def isMet(self, hourOfTheDay):
-        return (self._ggsn.numberOfRunningInstances() * self._instance_capacity - self._ggsn.currentNumberOfTunnels()) < 2
+        return (self._hv.number_of_running_instances() * self._instance_capacity - self._ggsn.currentNumberOfTunnels()) < 2
 
 class DefaultShutdownCondition:
-    def __init__(self, ggsn, config):
+    def __init__(self, ggsn, hv, config):
         self._ggsn = ggsn
+        self._hv = hv
         self._instance_capacity = config.numberOfSupportedParallelTunnels
 
     def isMet(self, hourOfTheDay):
-         total_capacity = self._ggsn.numberOfRunningInstances() * self._instance_capacity
-         print("run_inst: %d, tuns: %d, max_t_per_inst: %d", self._ggsn.numberOfRunningInstances(), self._ggsn.currentNumberOfTunnels(), self._instance_capacity)
-
+         total_capacity = self.hv._number_of_running_instances() * self._instance_capacity
          return (total_capacity - self._ggsn.currentNumberOfTunnels()) >= self._instance_capacity * 2
 
 
