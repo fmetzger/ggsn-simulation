@@ -93,7 +93,7 @@ class Multiserver_GGSN(Base_GGSN):
             self.logger.info("Tunnel request denied.")
 
         else:
-            self.hv.check_and_increase_capacity()
+            yield self.env.start(self.hv.check_and_increase_capacity())
             # print(self.hv)
 
             with self.tunnels.request() as request:
