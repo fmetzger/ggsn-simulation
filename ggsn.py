@@ -88,25 +88,21 @@ class Multiserver_GGSN(Base_GGSN):
         if currentTime >= self.transientPhaseDuration:
             self.numberOfTotalTunnels += 1
 
-        if self.tunnels.count >= self.tunnels.capacity: ## capacity becomes 0 shortly after sim start, big issue as this will block any future tunnels
+        yield self.env.start(self.hv.check_and_increase_capacity())
+
+        if self.tunnels.count >= self.tunnels.capacity:
             self.numberOfTunnelsBlocked += 1
             self.logger.info("Tunnel request denied.")
 
         else:
-            yield self.env.start(self.hv.check_and_increase_capacity())
-            # print(self.hv)
-
             with self.tunnels.request() as request:
                 yield request
-
-                ## fetch the inverse cdf for the duration distribution for the current hour of day
-                tunnelDuration = self.tunnelDurationRV(self.env.now)
-
+                
+                tunnelDuration = self.tunnelDurationRV(self.env.now) ## fetch the inverse cdf for the duration distribution for the current hour of day
                 self.logger.info("Tunnel established, duration of %f", tunnelDuration)
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
 
-            #
             yield self.env.start(self.hv.check_and_reduce_capacity())
 
     def report(self, seed, simulationDuration):
