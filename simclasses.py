@@ -63,7 +63,7 @@ class Hypervisor():
         self.instanceShutdownTime = options.shutdownTime
         self._shutdownCondition = options.shutdownCondition(self.ggsn, self, options)
 
-        self.numberOfMaxInstances = 1000
+        self.numberOfMaxInstances = options.maxInstanceNumber
         self.instances = simpy.Resource(self.env, capacity = self.numberOfMaxInstances)
         self.instances_monitor = monitoring.resource_monitor(self.instances, DurationBackend(self.numberOfMaxInstances, self.ggsn.transientPhaseDuration))
         self.instances.request()   # we need to start with one server already available
@@ -73,18 +73,21 @@ class Hypervisor():
 
     def check_and_increase_capacity(self):
         if not Hypervisor.instanceStartup:
-            if self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
-                Hypervisor.instanceStartup = True 
-                yield self.env.timeout(self.instanceStartupTime)
-                req = self.instances.request()
-                # yield req
-                self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
-                self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
-                Hypervisor.instanceStartup = False
+            if self.number_of_running_instances() < self.instances.capacity:
+                if self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
+                    Hypervisor.instanceStartup = True 
+                    yield self.env.timeout(self.instanceStartupTime)
+                    req = self.instances.request()
+                    # yield req
+                    self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
+                    self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
+                    Hypervisor.instanceStartup = False
+                else:
+                    self.logger.info("startup_condition: %d, run_inst: %d, tuns: %d, max_t_per_inst: %d", self._startupCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
             else:
-                self.logger.warn("startup_condition: %d, run_inst: %d, tuns: %d, max_t_per_inst: %d", self._startupCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)         
+                self.logger.warn("Instances at max capacity, not spawning another instance.")
         else:
-            self.logger.warn("Already spawning new GGSN, not spawning another instance.")
+            self.logger.info("Already spawning new GGSN, not spawning another instance.")
 
     def check_and_reduce_capacity(self):
         if (self.number_of_running_instances() > 1):
