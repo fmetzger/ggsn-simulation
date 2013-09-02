@@ -80,12 +80,12 @@ class Hypervisor():
                     req = self.instances.request()
                     # yield req
                     self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
-                    self.logger.warn("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
+                    self.logger.info("Spawning new GGSN instance, now at %d with total capacity %d", self.number_of_running_instances(), self.ggsn.tunnels._capacity)
                     Hypervisor.instanceStartup = False
                 else:
                     self.logger.info("startup_condition: %d, run_inst: %d, tuns: %d, max_t_per_inst: %d", self._startupCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
             else:
-                self.logger.warn("Instances at max capacity, not spawning another instance.")
+                self.logger.info("Instances at max capacity, not spawning another instance.")
         else:
             self.logger.info("Already spawning new GGSN, not spawning another instance.")
 
@@ -93,7 +93,7 @@ class Hypervisor():
         if (self.number_of_running_instances() > 1):
             if (not Hypervisor.instanceShutdown):
                 if (self._shutdownCondition.isMet(getHourOfTheDay(self.env.now))):
-                    self.logger.warn("shutdown_cond: %d run_inst: %d, tuns: %d, max_t_per_inst: %d, ", self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
+                    self.logger.info("shutdown_cond: %d run_inst: %d, tuns: %d, max_t_per_inst: %d, ", self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
                     Hypervisor.instanceShutdown = True
                     self.instances.release(self.instances.users[-1])
                     self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
