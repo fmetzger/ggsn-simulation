@@ -95,6 +95,8 @@ def option_parse(config_dict):
 
     parser.add_argument("-n", "--numberOfSupportedParallelTunnels", type=int, default = config_dict["number_of_supported_parallel_tunnels"])
 
+    parser.add_argument("-N", "--maxInstanceNumber", type=int, default = config_dict["number_of_supported_running_instances"])
+
 
     subparsers = parser.add_subparsers(title = "type", description = "available ggsn types", dest="type")
     traditional_parser = subparsers.add_parser("traditional")
@@ -104,7 +106,7 @@ def option_parse(config_dict):
     multiserver_parser.add_argument("-z", "--shutdownTime", type=int, default = config_dict["shutdown_time"])
     multiserver_parser.add_argument("-U", "--startupCondition", type=class_type, default = config_dict["startup_condition"])
     multiserver_parser.add_argument("-Z", "--shutdownCondition", type=class_type, default = config_dict["shutdown_condition"])
-    multiserver_parser.add_argument("-N", "--maxInstanceNumber", type=int, default = config_dict["number_of_supported_running_instances"])
+    # multiserver_parser.add_argument("-N", "--maxInstanceNumber", type=int, default = config_dict["number_of_supported_running_instances"])
 
 
     # parser.add_option("-l", "--shutdownCondition", type="string", help="Condition under which to shut down an instance, expression as three variable lambda: tunnels, instances, instancecapacity")
