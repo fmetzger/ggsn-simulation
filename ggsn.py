@@ -8,8 +8,8 @@ class Base_GGSN():
     def __init__(self, env, options):
         self.env = env
         self.name = options.type
+        self.seed = options.seed
 
-        self.resultsdir = options.results
         self.logger = logging.getLogger(options.type)
         inverseCdfs = loadHourlyDuration('assets/inverse_cdf.csv')
         self.tunnelDurationRV = lambda t: tunnelDuration(inverseCdfs, random.uniform(0,1), t)        
@@ -23,6 +23,9 @@ class Base_GGSN():
         self.tunnels = simpy.Resource(self.env, capacity = self.numberOfSupportedParallelTunnels)
         self.tunnels_monitor = monitoring.resource_monitor(self.tunnels, DurationBackend(self.numberOfSupportedParallelTunnels, self.transientPhaseDuration))
 
+        self.resultsdir = "{0}/{1}/".format(options.results, self.name)
+        self.resultsbasename = "_{0}_{1}.csv".format(self.numberOfSupportedParallelTunnels, options.duration)
+
     def resourceUseDistribution(self,monitor):
         return [duration/self.env.now for duration in monitor.data]
 
@@ -35,17 +38,15 @@ class Base_GGSN():
     def meanResourceUtilization(self, distribution):
         return sum([i * distribution[i] for i in range(len(distribution))])
 
-    def report(self, seed, simulationDuration):
-        mkdirs("%s/%s" % (self.resultsdir, self.name))
-        with open("%s/%s/resource_use_distribution_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
-            resourceUseDistribution = self.resourceUseDistribution(self.tunnels_monitor)
+    def report(self):
+        # mkdirs("%s/%s" % (self.resultsdir, self.name))
+        mkdirs(self.resultsdir)
+        with open("{0}resource_use_distribution{1}".format(self.resultsdir, self.resultsbasename), "a") as csvFile:
             writer = csv.writer(csvFile, delimiter = ";")
-            writer.writerow([seed] + resourceUseDistribution)
-        with open("%s/%s/metrics_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
-            meanResourceUtilization = self.meanResourceUtilization(resourceUseDistribution)
-            blockingProbability = self.blockingProbability()
+            writer.writerow([self.seed] + self.resourceUseDistribution(self.tunnels_monitor))
+        with open("{0}metrics{1}".format(self.resultsdir, self.resultsbasename), "a") as csvFile:
             writer = csv.writer(csvFile, delimiter = ";")
-            writer.writerow([seed, meanResourceUtilization, blockingProbability])
+            writer.writerow([self.seed, self.meanResourceUtilization(self.resourceUseDistribution(self.tunnels_monitor)), self.blockingProbability()])
 
 
 class Traditional_GGSN(Base_GGSN):
@@ -77,6 +78,8 @@ class Multiserver_GGSN(Base_GGSN):
     def __init__(self, env, options):
         Base_GGSN.__init__(self, env, options)
         self.hv = Hypervisor(self, env, options)
+        self.resultsbasename = "_{0}_{1}_{2}.csv".format(self.numberOfSupportedParallelTunnels, self.hv.numberOfMaxInstances, options.duration)
+
 
 
     def currentNumberOfTunnels(self):
@@ -105,12 +108,11 @@ class Multiserver_GGSN(Base_GGSN):
 
             yield self.env.start(self.hv.check_and_reduce_capacity())
 
-    def report(self, seed, simulationDuration):
-        Base_GGSN.report(self, seed, simulationDuration)
-        with open("%s/%s/instance_use_distribution_%d_%d.csv" % (self.resultsdir, self.name, self.numberOfSupportedParallelTunnels, simulationDuration), "a") as csvFile:
-            resourceUseDistribution = self.resourceUseDistribution(self.hv.instances_monitor)
+    def report(self):
+        Base_GGSN.report(self)
+        with open("{0}instance_use_distribution{1}".format(self.resultsdir, self.resultsbasename), "a") as csvFile:
             writer = csv.writer(csvFile, delimiter = ";")
-            writer.writerow([seed] + resourceUseDistribution)
+            writer.writerow([self.seed] + self.resourceUseDistribution(self.hv.instances_monitor))
 
 
 

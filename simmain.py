@@ -30,7 +30,7 @@ def main():
     users = Users(env, ggsn, options)
     env.run(until = options.duration)
     print("Writing results")
-    ggsn.report(options.seed, options.duration)
+    ggsn.report()
 
 
 if __name__ == '__main__':
