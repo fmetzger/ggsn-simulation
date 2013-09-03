@@ -77,6 +77,16 @@ class Hypervisor():
                 if self._startupCondition.isMet(getHourOfTheDay(self.env.now)):
                     Hypervisor.instanceStartup = True 
                     yield self.env.timeout(self.instanceStartupTime)
+                    
+                    # TODO
+                    ## sample code with a possible way to threat the blocking tunnel in the instance startup
+                    #result = yield self.env.timeout(self.instanceStartupTime) | currentTunnelDuration
+                    # if we only waited tunnel duration time and not the whole instance duration
+                    #if self.env.timeout(self.instanceStartupTime) not in result:
+                    #   do stuff
+                    # return remaining tunnel time
+                    # TODO
+
                     req = self.instances.request()
                     # yield req
                     self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
@@ -95,7 +105,7 @@ class Hypervisor():
                 if (self._shutdownCondition.isMet(getHourOfTheDay(self.env.now))):
                     self.logger.info("shutdown_cond: %d run_inst: %d, tuns: %d, max_t_per_inst: %d, ", self._shutdownCondition.isMet(getHourOfTheDay(self.env.now)), self.number_of_running_instances(), self.ggsn.currentNumberOfTunnels(), self.ggsn.numberOfSupportedParallelTunnels)
                     Hypervisor.instanceShutdown = True
+                    yield self.env.timeout(self.instanceShutdownTime)
                     self.instances.release(self.instances.users[-1])
                     self.ggsn.tunnels._capacity = self.ggsn.numberOfSupportedParallelTunnels * self.number_of_running_instances()
-                    yield self.env.timeout(self.instanceShutdownTime)
                     Hypervisor.instanceShutdown = False
