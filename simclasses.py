@@ -35,7 +35,7 @@ class Users():
         self.ggsn = ggsn
 
         self.lastNotification = 0
-        self.env.start(self.run())
+        self.env.process(self.run())
 
     def run(self):
         while True:
@@ -46,7 +46,7 @@ class Users():
             nextArrival = self.tunnelInterArrivalTimeRV(currentTime)
             yield self.env.timeout(nextArrival)
             self.logger.info("New tunnel request by user")
-            self.env.start(self.ggsn.process())
+            self.env.process(self.ggsn.process())
 
 
 

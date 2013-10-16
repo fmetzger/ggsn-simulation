@@ -91,7 +91,7 @@ class Multiserver_GGSN(Base_GGSN):
         if currentTime >= self.transientPhaseDuration:
             self.numberOfTotalTunnels += 1
 
-        yield self.env.start(self.hv.check_and_increase_capacity())
+        yield self.env.process(self.hv.check_and_increase_capacity())
 
         if self.tunnels.count >= self.tunnels.capacity:
             self.numberOfTunnelsBlocked += 1
@@ -106,7 +106,7 @@ class Multiserver_GGSN(Base_GGSN):
                 yield self.env.timeout(tunnelDuration)
             self.logger.info("Tunnel completed, now %d/%d resources in use.", self.tunnels.count, self.tunnels.capacity)
 
-            yield self.env.start(self.hv.check_and_reduce_capacity())
+            yield self.env.process(self.hv.check_and_reduce_capacity())
 
     def report(self):
         Base_GGSN.report(self)
