@@ -1,0 +1,58 @@
+\begin{tikzpicture}
+  [
+    flow/.style={line width=2pt, =>stealth'},
+    arrival/.style={flow, orange},
+    block/.style={flow, reddishpurple},
+    ggsn/.style={fill=grey!60, rounded corners=0.5cm},
+    server/.style={line width=1pt, fill=skyblue},
+    vm/.style={fill=white, rounded corners=0.25cm},
+    resources/.style={rounded corners=0.25cm},
+    activate/.style={->, bluishgreen, line width=2pt},
+    deactivate/.style={<-, vermillion, line width=2pt}
+  ]
+  \draw[->, arrival] (0.0, 3.0)  -- node[above] {$\lambda(t)$} (2.25, 3.0);
+  \draw[block, bend right] (2.25, 2.8) edge[->] node[below right] {$p_b$} (0.7, 1.0);
+
+  \draw[ggsn] (2.55, 0.0) rectangle (8.0, 5.25);
+
+  \draw[server] (3.0, 0.75) node {$s_{\max}$};
+
+  \draw[vm] (3.45, 0.25) rectangle (6.85, 1.25);
+  \draw[server] (4.025, 0.75) circle[radius=0.325cm] node {$1$};
+  \draw[server] (4.775, 0.75) circle[radius=0.325cm] node {$2$};
+  \draw[server] (5.525, 0.75) node {\textellipsis};
+  \draw[server] (6.275, 0.75) circle[radius=0.325cm] node {$n$};
+  \draw[server] (7.500, 0.75) node {$\mu(t)$};
+
+  \draw (5.15, 2.075) node {\textellipsis};
+
+  \draw[server] (3.0, 3.25) node {$2$};
+
+  \draw[vm] (3.45, 2.75) rectangle (6.85, 3.75);
+  \draw[server] (4.025, 3.25) circle[radius=0.325cm] node {$1$};
+  \draw[server] (4.775, 3.25) circle[radius=0.325cm] node {$2$};
+  \draw[server] (5.525, 3.25) node {\textellipsis};
+  \draw[server] (6.275, 3.25) circle[radius=0.325cm] node {$n$};
+  \draw[server] (7.500, 3.25) node {$\mu(t)$};
+
+  \draw[server] (3.0, 4.5) node {$1$};
+
+  \draw[vm] (3.45, 4) rectangle (6.85, 5);
+  \draw[server] (4.025, 4.5) circle[radius=0.325cm] node {$1$};
+  \draw[server] (4.775, 4.5) circle[radius=0.325cm] node {$2$};
+  \draw[server] (5.525, 4.5) node {\textellipsis};
+  \draw[server] (6.275, 4.5) circle[radius=0.325cm] node {$n$};
+  \draw[server] (7.500, 4.5) node {$\mu(t)$};
+
+  \draw (5.6, -0.25) node {(De)Activate Server};
+  \draw[resources] (3.45, -1.0) rectangle(7.75, -0.5);
+  \fill[skyblue, resources] (3.45, -1.0) rectangle(5.75, -0.5);
+  \fill[skyblue] (3.8, -1.0) rectangle(5.75, -0.5);
+  \draw (3.8, -1.0) rectangle node[right] {$\theta$} (3.8, -0.5);
+  \draw[deactivate] (3.8, -0.5) -- (3.8, 0.0);
+  \draw (7.2, -1.0) rectangle node[left] {$\Theta$} (7.2, -0.5);
+  \draw[activate] (7.2, -0.5) -- (7.2, 0.0);
+  \draw (5.6, -1.25) node {Free Resources};
+
+\end{tikzpicture}
+

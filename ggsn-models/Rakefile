@@ -1,0 +1,13 @@
+task :figures do
+  Dir['figure_sources/plot_*.R'].each do |plot_filename|
+    `Rscript #{ plot_filename }`
+  end
+end
+
+task :latex do
+  `cd tex; latexmk -pdf paper.tex`
+end
+
+task :all => [:figures, :latex]
+
+task :default => [:all]

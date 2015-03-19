@@ -1,0 +1,18 @@
+\begin{tikzpicture}
+  [
+    flow/.style={line width=2pt, =>stealth'},
+    arrival/.style={flow, orange},
+    block/.style={flow, reddishpurple},
+    ggsn/.style={fill=grey!60, rounded corners=0.75cm},
+    server/.style={line width=1pt, fill=skyblue}
+  ]
+  \draw[->, arrival] (0.0, 3.0)  -- node[above] {$\lambda(t)$} (4.2, 3.0);
+  \draw[block, bend right] (4.2, 2.5) edge[->] node[below right] {$p_b$} (0.7, 0.5);
+
+  \draw[ggsn] (4.5, 0.0) rectangle (8.0, 4);
+
+  \draw[server] (5.5, 3.25) circle[radius=0.5cm] node {$1$} node[right=1.0cm] {$\mu(t)$};
+  \draw (5.5, 2.00) node {\textellipsis};
+  \draw[server] (5.5, 0.75) circle[radius=0.5cm] node {$n$} node[right=1.0cm] {$\mu(t)$};
+\end{tikzpicture}
+

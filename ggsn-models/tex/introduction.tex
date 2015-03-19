@@ -1,0 +1,16 @@
+%!TEX root = paper.tex
+\section{Introduction}
+\label{sec:intro}
+With the increased importance of smart phones, mobile networks are currently experiencing rapid growth.
+Compared to a fixed access provider additional aspects have to be taken into account when dimensioning a mobile network. 
+First and most prominent is the planning of radio access cells --- their coverage, frequency selection, and backhaul, i.e., the connection to the operator's network. Radio network planning research and tools readily exist to help solve this problem \cite{tutschku1998demand}.
+Albeit of equal importance, there is much less public knowledge and research on the second aspect in setting up the mobile network: setting up and dimensioning the core network. Consisting of a large number of specialized network nodes in need of careful tuning to each other, correctly putting together the core is no small feat. The reason for this is the large number of services incorporated into the protocol stack --- e.g., authentication, accounting, or monitoring --- and the amount of state, that needs to be held and signaled throughout the network, coming with it.
+
+One major metric to consider in this core dimensioning is the number of supported tunnels, i.e., connections to the Internet, of the \gls{GGSN}.
+The \gls{GGSN}'s performance depends on factors like customers to serve, applications in the network, user behavior and devices used. During dimensioning, these factors are either unknown or subject to change as user behavior evolves.
+But these network components are sold as static middleboxes and cannot not be easily extended with of-the-shelf hardware in order to account for new requirements.
+The newly introduced concept of \gls{NFV}~\cite{nfv_whitepaper} suggests to harness technologies from cloud computing in the network. This would allow network operators to scale out, i.e., using additional low performance machines, instead of scaling up, which requires them to replace existing hardware with more powerful components.
+
+The contribution of this work is threefold. First, we introduce models for both a traditional \gls{GGSN} as well as a virtual \gls{GGSN} using \gls{NFV}. Second, we provide distributions for \gls{GTP} tunnel interarrival times and durations. Finally, we study performance trade-offs when using a virtual \gls{GGSN}, discussing different options to consider when using a virtual \gls{GGSN}.
+
+This paper is structured as follows. Section~\ref{sec:background} gives a brief explanation of the involved 3G infrastructure and general behavior of mobile networks. An overview of the related work is also included. We present our two models in Section~\ref{sec:model}. Afterwards, Section~\ref{sec:dataset} consists of a short description of the dataset that was used and the relevant evaluations and conclusions drawn from the data. Afterwards, we evaluate the numerical results and implications of the queuing simulation in Section~\ref{sec:numerical}. The paper concludes in Section~\ref{sec:conclusion}.

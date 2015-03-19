@@ -1,0 +1,84 @@
+%!TEX program = pdflatex
+\documentclass[conference]{IEEEtran}
+
+
+  \usepackage{ifluatex}
+
+  \ifluatex
+    \usepackage{fontspec}
+    %\defaultfontfeatures{Ligatures=TeX} 
+    % load your system fonts; e.g.:
+    %\setmainfont{LinLibertineO}
+    %\setsansfont{LinBiolinumO}
+    %\setmonofont{Inconsolata}
+  \else
+    \usepackage[utf8]{inputenc}                   
+    \usepackage[T1]{fontenc}
+    % load some Type 1 font; e.g.:
+    %\usepackage[fulloldstylenums,largesmallcaps]{kpfonts}
+  \fi
+
+  \usepackage{units}
+
+  \usepackage{glossaries}
+
+  \usepackage{subcaption} % will be problematic for llncs
+  \captionsetup{compatibility=false} 
+
+  \usepackage{xspace}
+
+  \usepackage{tikz}
+\usetikzlibrary{arrows}
+
+\usepackage{booktabs}
+
+\usepackage{url}
+\usepackage{mathtools}
+\usepackage{fixmath}
+
+\usepackage{tabu}
+
+\setlength{\belowcaptionskip}{-5pt}
+
+\input{colors}
+\input{abbreviations}
+\input{glossary}
+\makeglossaries
+
+
+\usepackage[url=true,doi=false,backend=biber,style=ieee,sorting=none,minnames=1,maxnames=2]{biblatex}
+\addbibresource{literature.bib}
+
+\newcommand{\refsec}[1]{Sec.~\ref{sec:#1}}
+\newcommand{\reffig}[1]{Fig.~\ref{fig:#1}}
+\newcommand{\reftab}[1]{Tab.~\ref{tab:#1}}
+
+
+
+\begin{document}
+
+\title{GTP-based Load Model and Virtualization Gain for a Mobile Network's GGSN}
+
+\author{\IEEEauthorblockN{Florian Metzger}
+\IEEEauthorblockA{University of Vienna, Austria\\
+Future Communication Research Group\\
+florian.metzger@univie.ac.at}
+\and
+\IEEEauthorblockN{Christian Schwartz and Tobias Hoßfeld}
+\IEEEauthorblockA{University of Würzburg, Germany \\
+Chair of Communication Networks\\
+{christian.schwartz,tobias.hossfeld}@informatik.uni-wuerzburg.de}}
+
+\maketitle
+
+\input{abstract}
+\input{introduction}
+\input{background}
+\input{model}
+\input{dataset}
+\input{numerical_evaluation}
+\input{conclusion}
+
+\printbibliography 
+
+\end{document}

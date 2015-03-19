@@ -1,0 +1,36 @@
+%!TEX root = paper.tex
+\section{Model}
+\label{sec:model}
+In this section we provide a model for a traditional \gls{GGSN} and discuss a model for a virtual \gls{GGSN} using \gls{NFV}. In \gls{NFV}~\cite{nfv_whitepaper} static network middleboxes are replaced by commodity hardware. The tasks solved by the original middleboxes are then handled by dedicated software. The generic queuing theoretic model is based on observations drawn from the measurement set provided in \refsec{dataset}. As such, any properties outside these observations are not reflected.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.8\columnwidth}{!}{\input{figures/model_traditional_ggsn}}
+  \caption{Model of a Traditional GGSN}
+\label{fig:model_traditional_ggsn}
+\end{figure}
+
+While internally a \emph{traditional} \gls{GGSN} may consist of multiple individual servers, it acts as a monolithic entity from an outside point of view. Therefore, idle portions of it can neither be deactivated nor reused for other purposes. This first model is based on this monolithic idea.
+
+The queuing theory equivalent to this model is displayed in Figure~\ref{fig:model_traditional_ggsn}. New tunnels requests arrive according to a Poisson distribution with a rate of $\lambda(t)$ at the GGSN, which has a maximum tunnel capacity of $c_c$. When the capacity is reached, blocking will occur and newly incoming tunnels are rejected. Traditionally, \glspl{GGSN} can be expected to be overdimensioned in such a way, that this rarely happens. If an incoming tunnel request is accepted, one of the \gls{GGSN}'s serving units will be occupied for the tunnel's duration of $\mu(t)$. The duration is assumed to be of an arbitrary non-Markovian service time distribution. Together this results in a non-stationary Erlang loss model, or $M(t)/G/c_c/0$.
+
+In order to give QoS guarantees the network operator is interested in the system's blocking probability $\blockingprobability$, which we consider to be a key metric of our model.
+Additionally, the previously described diurnal patterns can also be modeled by adjusting the arrival and serving process distributions for each time of day. This alternatively also allows just to investigate the busy hour and thus the system's peak load.
+
+\subsection{GGSN using Network Function Virtualization}\label{sec:virtual_ggsn}
+\begin{figure}[htbp]
+  \centering
+  \resizebox{0.9\columnwidth}{!}{\input{figures/model_nfv_ggsn}}
+  \caption{Model of a GGSN using Network Function Virtualization}
+  \label{fig:model_nfv_ggsn}
+\end{figure}
+
+In the second model, we introduce concepts from \gls{NFV}, i.e., the idea to replace middleboxes with commodity hardware.
+This allows us to realize benefits from cloud computing, as we are now able to scale out instead of up. The assumptions of the Markov arrival process $\lambda(t)$ and the serving time distributions $\mu(t)$ are carried over. However, instead of one server processing every tunnel, this model assumes that there are up to $s_{max}$ virtualized servers $s_i$. Each of these can be much smaller than the traditional GGSN, having a tunnel serving capacity of $c_i \ll c_c$ and a total system capacity of $c_{max} = s_{max} \times c_i$.
+
+To increase efficiency all but a small portion of the server instances can be initially turned off. Only when a certain condition is reached, a new one needs to be provisioned. For example, one could always hold one instance in reserve for upcoming requests and provision as soon as the reserver gets used. Similar rules should apply in the shutdown of servers and should form a hysteresis together with the boot condition. 
+%For example it would be possible to keep at least one server in reserve but never more than two.
+
+If these conditions are not carefully selected and are in tune with the expected boot time of an instance, additional blocking could occur. Despite not having reached its maximum capacity, this system will still reject tunnel requests during the provisioning phase when no tunnel slots are free. This could be remedied by a request queue. However, this makes the system more complex without providing real benefit, as mobile devices usually just repeat their attempts when the request is taking too long. 
+
+To place incoming tunnel state on one of the available servers and manage the servers a load balancer or hypervisor is required. To ensure, that the system can scale down to its actual needs, the balancer should place tunnels on servers, that are the fullest, keeping the reserve free. It may even migrate tunnel state from almost empty servers away so that these can be shut down, when certain conditions are fulfilled. Keeping instance close to their capacity should also have no impact on the performance a mobile device associated to a specific tunnel experiences. Adequate strategies for both load balancing and migration will be considered in future work.

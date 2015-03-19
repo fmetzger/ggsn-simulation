@@ -1,0 +1,36 @@
+%!TEX root = paper.tex
+\section{Background}
+\label{sec:background}
+This section provides the necessary background on topics important for the remainder of the paper including \gls{GPRS} basics and related work.
+%\gls{GPRS}, and therefore \gls{UMTS} fundamentals, and \gls{GTP} signaling are discussed in \refsec{gprs_fundamentals}.
+%A short overview of related work is given in \refsec{related_work}.
+\subsection{\acrshort{GPRS} \& \acrshort{UMTS} Fundamentals}\label{sec:gprs_fundamentals}
+UMTS is specified by the \gls{3GPP}, with relevant parts for this investigation found in \gls{TS} 23.060~\cite{3gpp23060}, which defines the network's basic aspects involving \gls{GPRS} protocols and its system architecture, and \gls{TS} 29.060~\cite{3gpp29060}, describing the specifics of \gls{GTP} across the Gn and Gp interfaces.
+
+The \gls{SGSN} and the \gls{GGSN} are the main components in the core's packet switched domain.
+The \gls{SGSN} serves mainly as mobility anchor, the \gls{GGSN} represents the gateway to the public Internet and is responsible for most connection and transmission related management. All user traffic between these nodes is encapsulated in a tunnel and managed with explicit \gls{GTP} signaling.
+
+Tunnel state is kept in the \gls{SGSN} and \gls{GGSN} as \gls{PDP} Context data structures.
+These contain various information, such as the device's IP address, \gls{IMSI}, and a tunnel identifier.
+Usually, any user-plane IP traffic is transported within a primary ``best effort'' tunnel.
+The \gls{GTP} signaling, responsible for the context management interactions, contains procedures for managing data paths, \gls{MS} locations, mobility, and, of course, tunnels.
+Of relevancy to this paper are the tunnel management request/response message pairs involved in the maintenance of \gls{PDP} Contexts.
+
+\subsection{Related Work}
+\label{sec:related_work}
+
+This work is a continuation of our previous evaluations conducted in \cite{metzger2012research, metzger2014jcnc}.
+Besides these, there is to our knowledge no other directly preceding literature to this paper's novel models.
+Still, efforts have been made to investigate the special properties of mobile networks and its traffic.
+These include attempts to infer control plane behavior through active measurements at the mobile device or synthetic traces and investigations of user traffic characteristics by means of real 3G core network traces.
+The authors of \cite{qian2011profiling} discuss cross-layer interactions in mobile cellular networks and the consequences for device energy consumption and radio channel allocation efficiency.
+
+Looking at the multitude of radio network control state machines, we find in \cite{5360763} some simple yet effective application layer methods investigating transitions of these state machines.This is further elaborated on by \cite{schwartz2013angrybirds} in order to analyze the radio signaling load and thus power efficiency from several different applications.
+
+Having access to core network datasets, the authors of \cite{shafiq2011characterizing, paul2011understanding} both take the approach of looking at high-level user traffic characteristics, focusing on temporal and spatial variations of user traffic volume and investigating the influence of different devices on this metric.
+Additional user flow and session traffic metrics are being studied in \cite{Zhang:2012:UCC:2377677.2377764} with the conclusion that, in comparison to wired traffic, short flows are occurring more frequently.
+In 2006, a core network measurement study of various user traffic related patterns was conducted, providing an initial insight into \gls{PDP} context activity and durations \cite{svoboda2006composition}.
+
+
+%In \cite{lee2007detection}, mobile network traces are used to simulate a malicious signaling storm by transmitting low-volume user plane traffic with specially crafted inter-departure times, causing signaling to occur constantly.
+%The authors of \cite{4675847} give some thoughts on the influence of core network elements on one-way delays in mobile networks.

@@ -1,0 +1,13 @@
+%!TEX root = paper.tex
+\section{Conclusion}
+\label{sec:conclusion}
+In this paper we investigated models and trade-offs for virtualizing components of the mobile core network.
+We first discussed a novel approach to mobile core network load modeling based on the control plane load at the \gls{GGSN}. The non-stationary Erlang loss model $M(t)/G/c_c/0$ is based on the currently implemented state of the network architecture and backed by an evaluation of actual data. This can serve as a baseline reference to plan and dimension mobile network accordingly, not just based on expected user traffic as traditionally.
+To improve scaling in the future, we proposed a new and virtualizable approach for \glspl{GGSN}.
+We presented random variables to model load in a \gls{GGSN} based on measurement data from the network of a nation-wide mobile service provider and made them available for reuse.
+Finally, we evaluate the model using a queuing simulation. We have shown, that the system's blocking probability is roughly equal to the single-server model but in addition achieves large efficiency gains, even when subjected to rudimentary provisioning conditions and long boot times.
+The model also has the ability to very easily scale out one's infrastructure by simply adding more small servers, reducing operational overhead.
+Implementing this model in an actual network might need considerable future effort and adaptation of existing infrastructure, protocols and standards. But if done correctly it could lead to new GGSN-as-a-Service business models, removing the need to provide and operate large amounts of infrastructure for rare cases of peak load. 
+
+%In the future we would like to deepen our modeling efforts to provide more dimensioning options for a core network.
+% Also, we want to further investigate the correlation of user traffic and signaling and take a look at the implications specific traffic types bring for the core network. 
